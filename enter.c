@@ -119,13 +119,20 @@ int enter(struct entry_settings *opts)
 
 		reset_capabilities();
 	}
-	
+
 	int nsactions[MAX_SHARES];
 	opts_to_nsactions(opts, nsactions);
+
+	if (nsactions[SHARE_NET] != NSACTION_UNSHARE && opts->nnics > 0) {
+		errx(1, "cannot create NICs when not in a network namespace");
+	}
 
 	struct outer_helper outer_helper;
 	outer_helper.persist = opts->persist;
 	outer_helper.unshare_user = nsactions[SHARE_USER] == NSACTION_UNSHARE;
+	outer_helper.unshare_net = nsactions[SHARE_NET] == NSACTION_UNSHARE;
+	outer_helper.nics = opts->nics;
+	outer_helper.nnics = opts->nnics;
 	outer_helper_spawn(&outer_helper);
 
 	/* After this point, we must operate with the privilege set of the caller
@@ -356,9 +363,16 @@ int enter(struct entry_settings *opts)
 
 	int rtnl = init_rtnetlink_socket();
 
-	/* Setup localhost */
-	if (net_unshare && !opts->no_loopback_setup) {
-		net_if_up(rtnl, "lo");
+	if (net_unshare) {
+		/* Setup localhost */
+		if (!opts->no_loopback_setup) {
+			net_if_up(rtnl, "lo");
+		}
+
+		/* Bring up the rest of the nics */
+		for (size_t i = 0; i < opts->nnics; ++i) {
+			net_if_up(rtnl, opts->nics[i].name);
+		}
 	}
 
 	/* We have a special case for pivot_root: the syscall wants the

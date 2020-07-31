@@ -30,6 +30,8 @@ Options:
 	--hostname <host>:      Set the host name.
 	--domainname <domain>:  Set the domain name.
 	--time <name>=<s>[.ns]: Set the time of a specific clock.
+	--nic <name,type,options>:
+	                        Create network interface in namespace.
 
 	--no-fake-devtmpfs:     Don't replace devtmpfs mounts with fake ones.
 	--no-derandomize:       Don't attempt to reduce randomness sources.

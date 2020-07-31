@@ -145,6 +145,14 @@ Users of bst may choose to opt-out of some of the isolation.
 
 	You cannot use this option with _--share=time_.
 
+\--nic [name=]<name>,[type=]<type>[,[options]]
+	Create a network interface in the inner process' network namespace.
+
+	You cannot use this option with _--share=net_.
+
+	Supported interface types and valid options are described in more detail
+	in the *NETWORKING* section.
+
 \--no-fake-devtmpfs
 	Do not replace devtmpfs mounts with a fake devtmpfs.
 
@@ -183,6 +191,38 @@ Users of bst may choose to opt-out of some of the isolation.
 	127.0.0.1/8 to it when in a network namespace.
 
 	This does nothing when used with _--share=net_.
+
+# NETWORKING
+
+This section describes the supported interface types and options that can
+be used with _--nic_ in a network namespace.
+
+Supported interface types are:
+- *dummy*
+- *macvlan*
+- *ipvlan*
+
+## OPTIONS
+
+*macvlan*
+	*link=<host-interface>*: attach the MACVLAN interface to the specified
+	host interface.
+
+	*mode=<mode>*: MACVLAN mode. Supported values are:
+	- *private* (default)
+	- *vepa*
+	- *bridge*
+	- *passthru*
+	- *source*
+
+*ipvlan*
+	*link=<host-interface>*: attach the IPVLAN interface to the specified
+	host interface.
+
+	*mode=<mode>*: IPVLAN mode. Supported values are:
+	- *l2* (default)
+	- *l3*
+	- *l3s*
 
 # SEE ALSO
 

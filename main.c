@@ -49,6 +49,8 @@ enum {
 	OPTION_NO_INIT,
 	OPTION_NO_LOOPBACK_SETUP,
 	OPTION_SHARE_DEPRECATED,
+	OPTION_NIC,
+	OPTION_ADDRESS,
 };
 
 /* Usage is generated from usage.txt. Note that the array is not null-terminated,
@@ -131,6 +133,8 @@ int main(int argc, char *argv[], char *envp[])
 		{ "time",               required_argument, NULL, OPTION_TIME            },
 		{ "persist",            required_argument, NULL, OPTION_PERSIST         },
 		{ "umask",              required_argument, NULL, OPTION_UMASK           },
+		{ "nic",                required_argument, NULL, OPTION_NIC             },
+		{ "address",            required_argument, NULL, OPTION_ADDRESS         },
 
 		/* Opt-out feature flags */
 		{ "no-fake-devtmpfs",   no_argument, NULL, OPTION_NO_FAKE_DEVTMPFS      },
@@ -315,6 +319,42 @@ int main(int argc, char *argv[], char *envp[])
 				}
 
 				opts.clockspecs[clock] = ts;
+				break;
+			}
+
+			case OPTION_NIC:
+			{
+				if (opts.nnics >= MAX_NICS) {
+					errx(1, "can only create a maximum of %d interface", MAX_NICS);
+				}
+				struct nic_options *nic = &opts.nics[opts.nnics];
+
+				/* 16 is enough to support everything */
+				struct kvlist kvlist[16];
+				size_t nopts = sizeof (kvlist) / sizeof (*kvlist);
+				kvlist_parse(optarg, kvlist, nopts, NULL);
+
+				/* Only the first two argument need not be key-value pairs */
+				size_t i = 0;
+				if (kvlist[i].value == NULL)
+					strncpy(nic->name, kvlist[i++].key, sizeof (nic->name));
+				if (kvlist[i].value == NULL)
+					strncpy(nic->type, kvlist[i++].key, sizeof (nic->type));
+
+				for (; i < nopts; ++i) {
+					if (kvlist[i].key == NULL) {
+						continue;
+					}
+					if (strcmp(kvlist[i].key, "name") == 0) {
+						strncpy(nic->name, kvlist[i].value, sizeof (nic->name));
+					} else if (strcmp(kvlist[i].key, "type") == 0) {
+						strncpy(nic->type, kvlist[i].value, sizeof (nic->type));
+					} else {
+						nic_parse(nic, kvlist[i].key, kvlist[i].value);
+					}
+				}
+
+				opts.nnics++;
 				break;
 			}
 

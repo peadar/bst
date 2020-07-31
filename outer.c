@@ -199,6 +199,19 @@ static char *itoa(int i) {
 	return buf;
 }
 
+static void create_nics(int sockfd, pid_t child_pid, struct nic_options *nics, size_t nnics) {
+	make_capable(BST_CAP_NET_ADMIN);
+
+	int rtnl = init_rtnetlink_socket();
+
+	for (size_t i = 0; i < nnics; ++i) {
+		nics[i].netns_pid = child_pid;
+		net_if_add(rtnl, &nics[i]);
+	}
+
+	reset_capabilities();
+}
+
 static void burn_uidmap_gidmap(int child_pid);
 static void persist_ns_files(int pid, const char *persist);
 
@@ -272,7 +285,11 @@ void outer_helper_spawn(struct outer_helper *helper)
 	if (helper->persist) {
 		persist_ns_files(child_pid, helper->persist);
 	}
-	
+
+	if (helper->unshare_net) {
+		create_nics(helper->rtnetlink_sock, child_pid, helper->nics, helper->nnics);
+	}
+
 	/* Notify sibling that we're done persisting their proc files
 	   and/or changing their [ug]id map */
 	int ok = 1;

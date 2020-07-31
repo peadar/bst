@@ -9,9 +9,15 @@
 
 # include <unistd.h>
 
+# include "net.h"
+
 struct outer_helper {
 	int unshare_user;
+	int unshare_net;
 	const char *persist;
+	int rtnetlink_sock;
+	struct nic_options *nics;
+	size_t nnics;
 
 	pid_t pid;
 	int in;
